@@ -30,6 +30,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# AUTH_USER_MODEL = 'main.User'  # Replace 'yourapp' with the actual name of your app
+
 
 # Application definition
 
@@ -42,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'corsheaders',
+    'main'
 ]
 
 MIDDLEWARE = [
