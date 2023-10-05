@@ -63,7 +63,7 @@ def project_list(request):
 @api_view(['GET'])
 def tag_list(request):
     tags = Tag.objects.all()
-    tag_list_data = [{'id': tag.id, 'name': tag.name, 'type': tag.type, 'level': tag.level} for tag in tags]
+    tag_list_data = [{'id': tag.id, 'name': tag.name} for tag in tags]
     return JsonResponse({'tags': tag_list_data})
 
 
@@ -110,22 +110,33 @@ def project_detail(request, project_id):
     except Project.DoesNotExist:
         return JsonResponse({'error': 'Project not found'}, status=404)
 
+import json
 
-@api_view(['GET'])
+@api_view(['POST'])
 def projects_by_tags(request):
-    if request.method == 'GET':
+    
+    if request.method == 'POST':
         
-        tag_ids = [3,4]  # Replace with the tag IDs you want to test
+        tags_list_str = request.POST.get('tag_ids')  #[1,2,3] of type string
+
+        try:
+            tags_list = json.loads(tags_list_str)
+            if isinstance(tags_list, list) and all(isinstance(item, int) for item in tags_list):
+                print(tags_list)
+            else:
+                JsonResponse({'error': 'Invalid input: not a list of integers'}, status=400)
+        except (ValueError, json.JSONDecodeError):
+            JsonResponse({'error': 'Invalid input: unable to parse as a list'}, status=400)
+
+                
+        tag_ids = tags_list  
         
         project_tags_count = ProjectsTag.objects.filter(tag_id__in=tag_ids).values('project_id').annotate(tag_count=Count('project_id'))
 
         matching_projects = [project_count['project_id'] for project_count in project_tags_count if project_count['tag_count'] == len(tag_ids)]
 
-
-         # Query the User model to find users who have both specified tags
         projects = Project.objects.filter(id__in=matching_projects)
         
-        # Create a list of user data
         project_list = [{'id': project.id, 'title': project.title} for project in projects]
 
         return JsonResponse({'projects': project_list})
@@ -137,9 +148,21 @@ def projects_by_tags(request):
 @api_view(['POST'])
 def users_by_tags(request):
     if request.method == 'POST':
-        # Hardcode some tag IDs for testing
-        tag_ids = [2]  # Replace with the tag IDs you want to test
+        
+        tags_list_str = request.POST.get('tag_ids')  #[1,2,3] of type string
 
+        try:
+            tags_list = json.loads(tags_list_str)
+            if isinstance(tags_list, list) and all(isinstance(item, int) for item in tags_list):
+                print(tags_list)
+            else:
+                JsonResponse({'error': 'Invalid input: not a list of integers'}, status=400)
+        except (ValueError, json.JSONDecodeError):
+            JsonResponse({'error': 'Invalid input: unable to parse as a list'}, status=400)
+
+                
+        tag_ids = tags_list  
+        
         # Count the number of occurrences of each tag for each user
         user_tags_count = UsersTag.objects.filter(tag_id__in=tag_ids).values('user_id').annotate(tag_count=Count('user_id'))
 
