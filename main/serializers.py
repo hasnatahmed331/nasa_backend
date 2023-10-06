@@ -4,7 +4,7 @@ from .models import *
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model = CustomUser
         fields = ['id', 'username', 'uuid', 'bio', 'name']
         
 
@@ -33,7 +33,7 @@ class ProjectsTagSerializer(serializers.ModelSerializer):
 
 
 class UserListView(generics.ListCreateAPIView):
-    queryset = User.objects.all()
+    queryset = CustomUser.objects.all()
     serializer_class = UserSerializer
 
 

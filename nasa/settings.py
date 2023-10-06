@@ -29,6 +29,7 @@ SECRET_KEY = 'django-insecure-ad&3h9rp2!49_x^dn7bhs)1vb3@e_qbcxd1om+r1kw^zl0mdix
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+CORS_ALLOW_ALL_ORIGINS = True
 
 
 # AUTH_USER_MODEL = 'main.User'  # Replace 'yourapp' with the actual name of your app

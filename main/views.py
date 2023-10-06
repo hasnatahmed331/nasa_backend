@@ -10,7 +10,6 @@ from .models import *
 from django.db.models import Count
 
 
-
 @csrf_exempt
 @api_view(['POST'])
 def authenticate_firebase_token(request):
@@ -100,7 +99,7 @@ def project_detail(request, project_id):
         project_data = {
             'id': project.id,
             'created_by': project.created_by.name,
-            'created_by_id': project.created_by.uuid,
+            'created_by_id': project.created_by.id,
             'start_date': project.start_date,
             'title': project.title,
             'description': project.description,
@@ -113,24 +112,17 @@ def project_detail(request, project_id):
 import json
 
 @api_view(['POST'])
-def projects_by_tags(request):
-    
+def projects_by_tags(request):  
     if request.method == 'POST':
+                    
+        tag_ids = request.data.get('tag_ids') 
         
-        tags_list_str = request.POST.get('tag_ids')  #[1,2,3] of type string
-
-        try:
-            tags_list = json.loads(tags_list_str)
-            if isinstance(tags_list, list) and all(isinstance(item, int) for item in tags_list):
-                print(tags_list)
-            else:
-                JsonResponse({'error': 'Invalid input: not a list of integers'}, status=400)
-        except (ValueError, json.JSONDecodeError):
-            JsonResponse({'error': 'Invalid input: unable to parse as a list'}, status=400)
-
-                
-        tag_ids = tags_list  
-        
+        #length of tags list call project list function
+        if len(tag_ids) == 0:
+            projects = Project.objects.all()
+            project_list_data = [{'id': project.id, 'title': project.title} for project in projects]
+            return JsonResponse({'projects': project_list_data})
+            
         project_tags_count = ProjectsTag.objects.filter(tag_id__in=tag_ids).values('project_id').annotate(tag_count=Count('project_id'))
 
         matching_projects = [project_count['project_id'] for project_count in project_tags_count if project_count['tag_count'] == len(tag_ids)]
@@ -148,21 +140,14 @@ def projects_by_tags(request):
 @api_view(['POST'])
 def users_by_tags(request):
     if request.method == 'POST':
+             
+        tag_ids = request.data.get('tag_ids')  #[1,2,3] of type string
         
-        tags_list_str = request.POST.get('tag_ids')  #[1,2,3] of type string
-
-        try:
-            tags_list = json.loads(tags_list_str)
-            if isinstance(tags_list, list) and all(isinstance(item, int) for item in tags_list):
-                print(tags_list)
-            else:
-                JsonResponse({'error': 'Invalid input: not a list of integers'}, status=400)
-        except (ValueError, json.JSONDecodeError):
-            JsonResponse({'error': 'Invalid input: unable to parse as a list'}, status=400)
-
-                
-        tag_ids = tags_list  
-        
+        if len(tag_ids) == 0:
+            users = CustomUser.objects.all()
+            user_list_data = [{'id': user.id, 'username': user.name} for user in users]
+            return JsonResponse({'users': user_list_data})
+  
         # Count the number of occurrences of each tag for each user
         user_tags_count = UsersTag.objects.filter(tag_id__in=tag_ids).values('user_id').annotate(tag_count=Count('user_id'))
 
