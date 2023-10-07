@@ -24,12 +24,8 @@ class Project(models.Model):
 class Tag(models.Model):
     id = models.AutoField(primary_key=True, unique=True)  # Unique ID field
     name = models.CharField(max_length=50)
-    TYPE_CHOICES = [
-        ('Domain', 'Domain'),
-        ('Skill', 'Skill'),
-    ]
-    type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    
+
+
     def __str__(self):
         return f"{self.name} "
 

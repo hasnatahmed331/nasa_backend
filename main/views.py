@@ -8,7 +8,9 @@ from django.http import HttpResponse
 from django.http import JsonResponse
 from .models import *
 from django.db.models import Count
-
+from embeddings import create
+import concurrent
+from django.shortcuts import get_object_or_404
 
 @csrf_exempt
 @api_view(['POST'])
@@ -47,9 +49,6 @@ def authenticate_firebase_token(request):
         print(e)
         return Response({'error': e.args[0]}, status=401)
 
-@api_view(['GET'])
-def hello(request):
-    return HttpResponse("Hello world!")
 
 
 @api_view(['GET'])
@@ -215,5 +214,90 @@ def users_by_tags(request):
         return JsonResponse({'users': user_list})
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
+    
+
+@api_view(['POST'])
+def bio(request):
+    if request.method == 'POST':
+            user_id = request.data.get('user_id')
+            bio = request.data.get('bio')
+            tags = request.data.get('tags')
+            already = False
+            try:
+                user = get_object_or_404(CustomUser, id=user_id)
+                user.bio = bio
+                user.save()
+
+                # Replace existing tags with the new tags for the user
+                existang_tags = UsersTag.objects.filter(user=user)  # Delete existing tags
+                if existang_tags.exists():
+                    already = True
+                    existang_tags.delete()
+                for tag_id in tags:
+                    tag = get_object_or_404(Tag, id=tag_id)
+                    UsersTag.objects.create(user=user, tag=tag)  # Create new UsersTag objects for the user and tags
+
+                context = {'name' : 'user' , 'bio' : bio , 'id' : user_id , 'already' : already}
+                executor = concurrent.futures.ThreadPoolExecutor()  
+                future =  executor.submit(create , context)
+                future.add_done_callback(lambda f: executor.shutdown(wait=False))
+            
+                return JsonResponse({'message': 'Bio updated successfully'})
+            except Exception as e:
+                return Response({"error" : e.args[0]})
+    else:
+            return JsonResponse({'error': 'Invalid request method'}, status=400)
+    
+
+
+@api_view(['POST'])
+def project(request):
+    if request.method == 'POST':
+            user_id = request.data.get('user_id')
+            title = request.data.get('title')
+            description = request.data.get('description')
+            start_date = request.data.get('start_date')
+            tags = request.data.get('tags')
+            id = request.data.get('id' , None)
+            if id is None:
+                try:
+                    user = get_object_or_404(CustomUser, id=user_id)
+                    project = Project.objects.create(created_by=user, title=title, description=description, start_date=start_date)
+                    for tag_id in tags:
+                        tag = get_object_or_404(Tag, id=tag_id)
+                        ProjectsTag.objects.create(project=project, tag=tag)
+                    
+                    context = {'name' : 'project' , 'id' : user_id , 'des' : description  , 'already' : False}
+                    executor = concurrent.futures.ThreadPoolExecutor()  
+                    future =  executor.submit(create , context)
+                    future.add_done_callback(lambda f: executor.shutdown(wait=False))
+                    
+                    return JsonResponse({'message': 'Project created successfully'})
+                except Exception as e:
+                    return Response({"error" : e.args[0]})
+            else:
+                try:
+                    project = get_object_or_404(Project, id=id)
+                    project.title = title
+                    project.description = description
+                    project.start_date = start_date
+                    project.save()
+
+                    # Replace existing tags with the new tags for the project
+                    ProjectsTag.objects.filter(project=project).delete()  # Delete existing tags
+                    for tag_id in tags:
+                        tag = get_object_or_404(Tag, id=tag_id)
+                        ProjectsTag.objects.create(project=project, tag=tag)  # Create new ProjectsTag objects for the project and tags
+                    
+                    context = {'name' : 'project' , 'id' : user_id , 'des' : description , 'already' : True}
+                    executor = concurrent.futures.ThreadPoolExecutor()  
+                    future =  executor.submit(create , context)
+                    future.add_done_callback(lambda f: executor.shutdown(wait=False))
+                    
+                    return JsonResponse({'message': 'Project updated successfully'})
+                except Exception as e:
+                    return Response({"error" : e.args[0]})
+    else:
+            return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 

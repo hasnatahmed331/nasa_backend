@@ -14,6 +14,10 @@ from pathlib import Path
 import firebase_admin
 from firebase_admin import credentials
 import os
+from qdrant_client import  QdrantClient
+
+from sentence_transformers import SentenceTransformer
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -144,3 +148,18 @@ CORS_ALLOWED_ORIGINS = [
 SERVICE_ACCOUNT_KEY_PATH = os.path.join(BASE_DIR, 'djangoauthentication-d5319-firebase-adminsdk-u9r4k-f6735623ef.json')
 cred = credentials.Certificate(SERVICE_ACCOUNT_KEY_PATH)
 firebase_admin.initialize_app(cred)
+
+ENCODER = SentenceTransformer('msmarco-distilbert-base-dot-prod-v3')
+
+
+QDRANT_CLIENT = QdrantClient(
+    url="https://0ef0f583-a35e-4280-b449-461945d5d0ba.us-east4-0.gcp.cloud.qdrant.io", 
+    api_key="6-uur-BTU61zruGfUQC6YOCAmkO3AJ4dMNJrmRzId84-B9CFKsxw8g",
+
+    
+)
+
+
+
+
+
