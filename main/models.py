@@ -29,15 +29,9 @@ class Tag(models.Model):
         ('Skill', 'Skill'),
     ]
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    # LEVEL_CHOICES = [
-    #     ('basic', 'Basic'),
-    #     ('intermediate', 'Intermediate'),
-    #     ('advanced', 'Advanced'),
-    # ]
-    # level = models.CharField(max_length=15, choices=LEVEL_CHOICES , null=True)
-
+    
     def __str__(self):
-        return f"{self.name}    "
+        return f"{self.name} "
 
 
 
@@ -49,7 +43,7 @@ class UsersTag(models.Model):
         unique_together = ['user', 'tag']
 
     def __str__(self):
-        return f"{self.userdata.username} - {self.tag.name}"
+        return f"{self.user.name} - {self.tag.name}"
     
     
 class ProjectsTag(models.Model):
@@ -61,5 +55,6 @@ class ProjectsTag(models.Model):
 
     def __str__(self):
         return f"{self.project.title} - {self.tag.name}"
+
 
 

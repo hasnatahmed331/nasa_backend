@@ -14,12 +14,14 @@ from django.db.models import Count
 @api_view(['POST'])
 def authenticate_firebase_token(request):
     # Get the Firebase ID token from the frontend request
-    firebase_id_token = request.POST.get('idToken')
+    firebase_id_token = request.data.get('idToken')
     # print(firebase_id_token)
 
     try:
         # Verify the Firebase ID token using Firebase Admin SDK
         decoded_token = auth.verify_id_token(firebase_id_token)
+        
+        # print(decoded_token) : email name uid 
                 
         # Get the UID (User ID) from the decoded token
         uid = decoded_token['uid']
@@ -31,9 +33,14 @@ def authenticate_firebase_token(request):
             user.name = decoded_token['name']
             user.save()
         
-        user.save()
         
-        return Response({'uid': uid, 'message': 'Firebase token authenticated successfully' , 'created': created})
+        return Response({
+            'uid': uid, 
+            'message': 'Firebase token authenticated successfully', 
+            'created': created,
+             'name' : user.name,
+             'id' : user.id,
+            })
     
     except Exception as e:
         # Handle authentication error
@@ -55,8 +62,23 @@ def user_list(request):
 @api_view(['GET'])
 def project_list(request):
     projects = Project.objects.all()
-    project_list_data = [{'id': project.id, 'title': project.title} for project in projects]
+    project_list_data = []
+
+    for project in projects:
+        project_tags = ProjectsTag.objects.filter(project=project)
+        tag_list = [{'id': project_tag.tag.id, 'name': project_tag.tag.name} 
+                    for project_tag in project_tags]
+        
+        project_data = {
+            'id': project.id,
+            'title': project.title,
+            'tags': tag_list,
+        }
+        
+        project_list_data.append(project_data)
+
     return JsonResponse({'projects': project_list_data})
+
 
 
 @api_view(['GET'])
@@ -72,7 +94,7 @@ def user_detail(request, user_id):
         user = CustomUser.objects.get(id=user_id)
         
         user_tags = UsersTag.objects.filter(user=user)
-        tag_list = [{'id': user_tag.tag.id, 'name': user_tag.tag.name,'level': user_tag.tag.level} 
+        tag_list = [{'id': user_tag.tag.id, 'name': user_tag.tag.name} 
                     for user_tag in user_tags]
               
         user_data = {
@@ -117,10 +139,24 @@ def projects_by_tags(request):
                     
         tag_ids = request.data.get('tag_ids') 
         
+        project_list_data = []
         #length of tags list call project list function
         if len(tag_ids) == 0:
             projects = Project.objects.all()
-            project_list_data = [{'id': project.id, 'title': project.title} for project in projects]
+
+            for project in projects:
+                project_tags = ProjectsTag.objects.filter(project=project)
+                tag_list = [{'id': project_tag.tag.id, 'name': project_tag.tag.name} 
+                            for project_tag in project_tags]
+                
+                project_data = {
+                    'id': project.id,
+                    'title': project.title,
+                    'tags': tag_list,
+                }
+                
+                project_list_data.append(project_data)
+
             return JsonResponse({'projects': project_list_data})
             
         project_tags_count = ProjectsTag.objects.filter(tag_id__in=tag_ids).values('project_id').annotate(tag_count=Count('project_id'))
@@ -129,9 +165,25 @@ def projects_by_tags(request):
 
         projects = Project.objects.filter(id__in=matching_projects)
         
-        project_list = [{'id': project.id, 'title': project.title} for project in projects]
+        # project_list = [{'id': project.id, 'title': project.title} for project in projects]
 
-        return JsonResponse({'projects': project_list})
+        # return JsonResponse({'projects': project_list})
+        
+        for project in projects:
+                project_tags = ProjectsTag.objects.filter(project=project)
+                tag_list = [{'id': project_tag.tag.id, 'name': project_tag.tag.name} 
+                            for project_tag in project_tags]
+                
+                project_data = {
+                    'id': project.id,
+                    'title': project.title,
+                    'tags': tag_list,
+                }
+                
+                project_list_data.append(project_data)
+
+        
+        return JsonResponse({'projects': project_list_data})
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
@@ -163,4 +215,5 @@ def users_by_tags(request):
         return JsonResponse({'users': user_list})
     else:
         return JsonResponse({'error': 'Invalid request method'}, status=400)
+
 
