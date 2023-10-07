@@ -11,4 +11,8 @@ urlpatterns = [
     path('alltags/', views.tag_list, name='tag_list'),
     path('projectsbytag/', views.projects_by_tags, name='projects_by_tag'),
     path('usersbytag/', views.users_by_tags, name='users_by_tag'),
+    path('project/' , views.project, name='project'),
+    path('bio/' , views.bio, name='bio'),
+    # path('check/' , views.check, name='check'),
+    path('search/' , views.search , name="search")
 ]

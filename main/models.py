@@ -13,7 +13,7 @@ class CustomUser(models.Model):
 class Project(models.Model):
     id = models.AutoField(primary_key=True, unique=True)
     created_by = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    start_date = models.DateField()
+    start_date = models.DateField(blank=True, null=True)
     title = models.CharField(max_length=100)
     description = models.TextField()
 

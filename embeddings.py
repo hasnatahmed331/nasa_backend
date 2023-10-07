@@ -15,53 +15,52 @@ def create(context):
         id = context['id']
         bio = context['bio']
         already = context['already']
+    
         
         vector = settings.ENCODER.encode(bio).tolist()
 
       
 
-        if not already:
+        if already == False:  
             settings.QDRANT_CLIENT.upsert(
-                collection_name='user', 
-                points= [
-                    models.PointStruct(
-                    id=int(id),
-                    vector=vector,
-                ),
+                    collection_name='user', 
+                    points= [
+                        models.PointStruct(
+                        id=int(id),
+                        vector= vector,
+                    ),
 
-                ]
-            )
+                    ]
+                )
+      
 
         else:
-            settings.QDRANT_CLIENT.update(
-                collection_name='user', 
+            print("inside update")
+            settings.QDRANT_CLIENT.update_vectors(
+                collection_name='user',     
                 points= [
-                    models.PointStruct(
-                    id=int(id),
-                    vector=vector,
-                ),
-
+                   {'id' : int(id) , 'vector' : vector}
                 ]
             )
+     
 
     elif name == 'project':
         id = context['id']
-        description = context['description']
+        description = context['des']
         already = context['already']
         vector = settings.ENCODER.encode(description).tolist()
         if already:
-            settings.QDRANT_CLIENT.update(
+            print("inside update")
+            settings.QDRANT_CLIENT.update_vectors(
                 collection_name='project', 
                 points= [
-                    models.PointStruct(
-                    id=int(id),
-                    vector=vector,
-                ),
-
+                    {'id' : int(id) , 'vector' : vector}
+    
                 ]
             )
         
         else:
+            print("inside create")
             settings.QDRANT_CLIENT.upsert(
                 collection_name='project', 
                 points= [
@@ -72,6 +71,32 @@ def create(context):
 
                 ]
             )
+
+def emb_search(search , query):
+    vector = settings.ENCODER.encode(query).tolist()
+    ids = []
+    if search == 'user':
+        hits = settings.QDRANT_CLIENT.search(
+            collection_name="user",
+            query_vector=vector,
+            limit=3,
+
+        )
+        list(hits)
+        for hit in hits:
+            ids.append(hit.id)
+        return ids
+    elif search == 'project':
+        hits = settings.QDRANT_CLIENT.search(
+            collection_name="project",
+            query_vector=vector,
+            limit=3,
+
+        )
+        list(hits)
+        for hit in hits:
+            ids.append(hit.id)
+        return ids
 
 
    
