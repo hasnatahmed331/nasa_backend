@@ -5,6 +5,7 @@ class CustomUser(models.Model):
     uuid = models.CharField(max_length=255, unique=True)
     bio = models.TextField(blank=True, null=True)
     name = models.CharField(max_length=255)
+    email = models.EmailField(max_length=255, unique=True , blank=True , null=True)
     
     def __str__(self):
         return self.name
@@ -30,7 +31,6 @@ class Tag(models.Model):
         return f"{self.name} "
 
 
-
 class UsersTag(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     tag = models.ForeignKey(Tag, on_delete=models.CASCADE)
@@ -52,5 +52,12 @@ class ProjectsTag(models.Model):
     def __str__(self):
         return f"{self.project.title} - {self.tag.name}"
 
-
+class CommunicationAccess(models.Model):
+    has_access_to = models.ForeignKey(CustomUser, related_name='access_to', on_delete=models.CASCADE)
+    to_this_person = models.ForeignKey(CustomUser, related_name='access_from', on_delete=models.CASCADE)
+    status = models.CharField(choices=[('requested', 'Requested'), ('approved', 'Approved')], max_length=20)
+    message = models.TextField(blank=True, null=True)
+    
+    def __str__(self):
+        return f"{self.has_access_to.name} has access of {self.to_this_person.name} with status {self.status}"    
 

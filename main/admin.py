@@ -18,9 +18,13 @@ class UsersTagAdmin(admin.ModelAdmin):
 class ProjectsTagAdmin(admin.ModelAdmin):
     list_display = ('id','project','tag')
     
+class CommunicationAccessAdmin(admin.ModelAdmin):
+    list_display = ('id','has_access_to','to_this_person','status','message')
+
 admin.site.register(CustomUser)
 admin.site.register(Project)
 admin.site.register(Tag)
 admin.site.register(UsersTag)
 admin.site.register(ProjectsTag)
+admin.site.register(CommunicationAccess)
 

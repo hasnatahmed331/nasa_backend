@@ -38,6 +38,7 @@ def authenticate_firebase_token(request):
         
         if created:
             user.name = decoded_token['name']
+            user.email = decoded_token['email']
             user.save()
         
         
@@ -392,4 +393,102 @@ def semantic_search(request):
     except Exception as e:
         return Response({'error' : e.args[0]})
 
+
+@api_view(['POST'])
+def send_access_request(request):
+    if request.method == 'POST':
+        try:
+            has_access_to_id = request.data.get('has_access_to_id')
+            to_this_person_id = request.data.get('to_this_person_id')
+            request_status = request.data.get('request_status')
+            message = request.data.get('message', '')
+
+            has_access_to = CustomUser.objects.get(id=has_access_to_id)
+            to_this_person = CustomUser.objects.get(id=to_this_person_id)
+
+            # Check if a similar request already exists, and update it if necessary
+            existing_request = CommunicationAccess.objects.filter(
+                has_access_to=has_access_to,
+                to_this_person=to_this_person,
+            ).first()
+
+            if existing_request:
+                existing_request.status = request_status
+                existing_request.message = message
+                existing_request.save()
+                return JsonResponse({'message': 'Already Request Sent'})
+            else:
+                new_request = CommunicationAccess(
+                    has_access_to=has_access_to,
+                    to_this_person=to_this_person,
+                    status=request_status,
+                    message=message,
+                )
+                new_request.save()
+
+            return JsonResponse({'message': 'Access request sent successfully'})
+        except CustomUser.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+
+
+from django.http import JsonResponse
+from .models import CustomUser, CommunicationAccess
+
+@api_view(['GET'])
+def get_access_for_person(request, person_id):
+    try:
+        person = CustomUser.objects.get(id=person_id)
+        access_list = CommunicationAccess.objects.filter(has_access_to=person)
+        access_data = []
+
+        for access in access_list:
+            id = access.id
+            to_this_person = access.to_this_person
+            access_status = access.status
+            message = access.message if access.message else "N/A"
+            email = to_this_person.email if to_this_person.email else "N/A"
+
+            if access_status == 'requested':
+                email = "null"
+            
+            access_info = {
+                "id" : id,
+                'to_this_person': to_this_person.name,
+                'request_status': access_status,
+                'email': email,
+                'message':message
+            }
+
+            access_data.append(access_info)
+
+        return JsonResponse({'access_list': access_data})
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
+    
+
+@api_view(['GET'])
+def get_to_this_person_access(request, person_id):
+    try:
+        person = CustomUser.objects.get(id=person_id)
+        access_list = CommunicationAccess.objects.filter(to_this_person=person)
+        access_data = []
+
+        for access in access_list:
+            id = access.id
+            has_access_to = access.has_access_to
+            access_status = access.status
+            message = access.message if access.message else "N/A"
+
+            access_info = {
+                'has_access_to': has_access_to.name,
+                'request_status': access_status,
+                'message':message,
+                "id":id
+            }
+
+            access_data.append(access_info)
+
+        return JsonResponse({'access_list': access_data})
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'User not found'}, status=404)
 
