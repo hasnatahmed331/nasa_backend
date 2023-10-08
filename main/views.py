@@ -464,7 +464,22 @@ def get_access_for_person(request, person_id):
         return JsonResponse({'access_list': access_data})
     except CustomUser.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
-    
+   
+@api_view(['GET'])
+def accept_access_request(request, request_id):
+    try:
+
+        access_request = CommunicationAccess.objects.get(id=request_id)
+        
+        if access_request.status == 'requested':
+            access_request.status = 'approved'
+            access_request.save()
+            
+            return JsonResponse({'message': 'Access request accepted'})
+        else:
+            return JsonResponse({'error': 'Access request is not in a pending state'}, status=400)
+    except CommunicationAccess.DoesNotExist:
+        return JsonResponse({'error': 'Access request not found'}, status=404) 
 
 @api_view(['GET'])
 def get_to_this_person_access(request, person_id):
@@ -491,4 +506,10 @@ def get_to_this_person_access(request, person_id):
         return JsonResponse({'access_list': access_data})
     except CustomUser.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
+
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from .models import CustomUser, CommunicationAccess
+
+
 

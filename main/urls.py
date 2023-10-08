@@ -17,8 +17,8 @@ urlpatterns = [
     path('check/' , views.check, name='check'),
     path('semanticsearch/' , views.semantic_search , name="search"),
     
+    path('requestaccept/<int:request_id>/' , views.accept_access_request , name='accept_request'),
     path('requestcommunication/' , views.send_access_request , name='request_communication'),
     path('ihavesent/<int:person_id>/' , views.get_access_for_person , name='get_access_for_person'),
     path('ihaverecieved/<int:person_id>/' , views.get_to_this_person_access , name='get_access_from_person'),
-    
 ]
