@@ -14,6 +14,7 @@ from django.shortcuts import get_object_or_404
 from django.conf import settings
 from qdrant_client import models
 
+from datetime import date
 
 
 @csrf_exempt
@@ -100,7 +101,6 @@ def project_list(request):
     return JsonResponse({'projects': project_list_data})
 
 
-
 @api_view(['GET'])
 def tag_list(request):
     tags = Tag.objects.all()
@@ -116,6 +116,10 @@ def user_detail(request, user_id):
         user_tags = UsersTag.objects.filter(user=user)
         tag_list = [{'id': user_tag.tag.id, 'name': user_tag.tag.name} 
                     for user_tag in user_tags]
+        
+        user_projects = Project.objects.filter(created_by=user)
+        project_list = [{'id': project.id, 'title': project.title}
+                        for project in user_projects]
               
         user_data = {
             'id': user.id,
@@ -123,6 +127,7 @@ def user_detail(request, user_id):
             'username': user.name,
             'bio': user.bio,
             'tags': tag_list,
+            'projects': project_list,
         }
         return JsonResponse(user_data)
     except CustomUser.DoesNotExist:
@@ -186,7 +191,6 @@ def projects_by_tags(request):
         return JsonResponse({'error': 'Invalid request method'}, status=400)
 
 
-
 @api_view(['POST'])
 def users_by_tags(request):
     if request.method == 'POST':
@@ -229,6 +233,9 @@ def bio(request):
             user_id = request.data.get('user_id')
             bio = request.data.get('bio')
             tags = request.data.get('tags')
+            
+            print(user_id , bio , tags)
+            
             already = False
             try:
                 user = get_object_or_404(CustomUser, id=user_id)
@@ -261,16 +268,19 @@ def bio(request):
 @api_view(['POST'])
 def project(request):
     if request.method == 'POST':
+        
             user_id = request.data.get('user_id')
             title = request.data.get('title')
             description = request.data.get('description')
-           
             tags = request.data.get('tags')
             id = request.data.get('id' , None)
+            
             if id is None:
                 try:
                     user = get_object_or_404(CustomUser, id=user_id)
-                    project = Project.objects.create(created_by=user, title=title, description=description)
+                    today = date.today()
+                    project = Project.objects.create(
+                        created_by=user, title=title, description=description , start_date=today, )
                     id = project.id
                     for tag_id in tags:
                         tag = get_object_or_404(Tag, name=tag_id)
@@ -327,12 +337,54 @@ def project(request):
 # #             ids.append(hit.id)
 # #     print(ids)
 # #     return Response({"ok" : "ok"})
+
+
 @api_view(['POST'])
-def search(request):
+def semantic_search(request):
     try:
         query =request.data.get('query')
         search   = request.data.get('search') 
         ids = emb_search(search , query)
+        
+        if search == "user":
+            users = CustomUser.objects.filter(id__in=ids)
+            user_list_data = []
+
+            for user in users:
+                users_tags = UsersTag.objects.filter(user=user)
+                tag_list = [{'id': user_tag.tag.id, 'name': user_tag.tag.name}
+                            for user_tag in users_tags]
+
+                user_data = {
+                    'id': user.id,
+                    'username': user.name,
+                    'tags': tag_list,
+                }
+
+                user_list_data.append(user_data)
+
+            return JsonResponse({'ids': user_list_data})
+        
+        elif search == "project":
+            projects = Project.objects.filter(id__in=ids)
+            project_list_data = []
+
+            for project in projects:
+                project_tags = ProjectsTag.objects.filter(project=project)
+                tag_list = [{'id': project_tag.tag.id, 'name': project_tag.tag.name} 
+                            for project_tag in project_tags]
+                
+                project_data = {
+                    'id': project.id,
+                    'title': project.title,
+                    'tags': tag_list,
+                }
+        
+                project_list_data.append(project_data)
+
+            return JsonResponse({'ids': project_list_data}) 
+             
+        
         return Response({'ids' : ids})
     except Exception as e:
         return Response({'error' : e.args[0]})
