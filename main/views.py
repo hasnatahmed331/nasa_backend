@@ -296,6 +296,7 @@ def project(request):
                 except Exception as e:
                     return Response({"error" : e.args[0]})
             else:
+                print("else")
                 try:
                     project = get_object_or_404(Project, id=id)
                     project.title = title
@@ -321,22 +322,15 @@ def project(request):
     else:
             return JsonResponse({'error': 'Invalid request method'}, status=400)
     
-# @api_view(['GET'])
-# # def check(request):
-# #     ids = []
-# #     query = "system design"
-# #     vector = settings.ENCODER.encode(query).tolist()
-# #     hits = settings.QDRANT_CLIENT.search(
-# #             collection_name="project",
-# #             query_vector=vector,
-# #             limit=2,
-
-# #         )
-# #     list(hits)
-# #     for hit in hits:
-# #             ids.append(hit.id)
-# #     print(ids)
-# #     return Response({"ok" : "ok"})
+@api_view(['GET'])
+def check(request):
+    x =settings.QDRANT_CLIENT.retrieve(
+        collection_name = "project",
+        ids = [10],
+        with_vectors = True
+    )
+    print(x)
+    return Response({"ok" : "ok"})
 
 
 @api_view(['POST'])
@@ -346,8 +340,11 @@ def semantic_search(request):
         search   = request.data.get('search') 
         ids = emb_search(search , query)
         
+        
         if search == "user":
             users = CustomUser.objects.filter(id__in=ids)
+            id_to_order = {id: order for order, id in enumerate(ids)}
+            users = sorted(users, key=lambda user: id_to_order[user.id])
             user_list_data = []
 
             for user in users:
@@ -367,9 +364,15 @@ def semantic_search(request):
         
         elif search == "project":
             projects = Project.objects.filter(id__in=ids)
+            
+            id_to_order = {id: order for order, id in enumerate(ids)}
+            projects = sorted(projects, key=lambda project: id_to_order[project.id])
+
+    
             project_list_data = []
 
             for project in projects:
+                print(project.id)
                 project_tags = ProjectsTag.objects.filter(project=project)
                 tag_list = [{'id': project_tag.tag.id, 'name': project_tag.tag.name} 
                             for project_tag in project_tags]

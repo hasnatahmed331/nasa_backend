@@ -82,10 +82,14 @@ def emb_search(search , query):
             limit=3,
 
         )
-        list(hits)
-        for hit in hits:
-            ids.append(hit.id)
+        # list(hits)
+        # for hit in hits:
+        #     ids.append(hit.id)
+        # return ids
+        hit_tuples = [(hit.id, hit.score) for hit in hits]
+        ids = [hit[0] for hit in hit_tuples]
         return ids
+    
     elif search == 'project':
         hits = settings.QDRANT_CLIENT.search(
             collection_name="project",
@@ -93,9 +97,16 @@ def emb_search(search , query):
             limit=3,
 
         )
-        list(hits)
-        for hit in hits:
-            ids.append(hit.id)
+        
+        # list(hits)
+        # for hit in hits:
+        #     ids.append(hit.id)
+        #     print(hit.score)
+        #     print(hit.id)
+        
+        # Convert hits to a list of tuples (id, score)
+        hit_tuples = [(hit.id, hit.score) for hit in hits]
+        ids = [hit[0] for hit in hit_tuples]
         return ids
 
 

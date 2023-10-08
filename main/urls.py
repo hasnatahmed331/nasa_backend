@@ -2,7 +2,7 @@ from . import views
 from django.urls import path
 
 urlpatterns = [
-    path('login' , views.authenticate_firebase_token, name='authenticate_firebase_token'),
+    path('login/' , views.authenticate_firebase_token, name='authenticate_firebase_token'),
     path('hey/', views.hello, name='hey'),
     path('user/<int:user_id>/', views.user_detail, name='user_detail'),
     path('project/<int:project_id>/', views.project_detail, name='project_detail'),
@@ -14,6 +14,6 @@ urlpatterns = [
     
     path('updateproject/' , views.project, name='project'),
     path('updatebio/' , views.bio, name='bio'),
-    # path('check/' , views.check, name='check'),
+    path('check/' , views.check, name='check'),
     path('semanticsearch/' , views.semantic_search , name="search")
 ]
