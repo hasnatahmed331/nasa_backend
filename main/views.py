@@ -16,6 +16,11 @@ from qdrant_client import models
 
 from datetime import date
 
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+from .models import CustomUser, CommunicationAccess
+
+
 
 @csrf_exempt
 @api_view(['POST'])
@@ -325,13 +330,15 @@ def project(request):
     
 @api_view(['GET'])
 def check(request):
-    x =settings.QDRANT_CLIENT.retrieve(
-        collection_name = "project",
-        ids = [10],
-        with_vectors = True
-    )
+    users = CustomUser.objects.all()
+
+    # Format users in the desired format
+    formatted_users = {user.id: user.bio for user in users}
+    x =settings.QDRANT_CLIENT.retrieve(collection_name = 'user' , ids = [1,2,3,4])
     print(x)
-    return Response({"ok" : "ok"})
+    return JsonResponse({'users': 'x'})
+    
+    
 
 
 @api_view(['POST'])
@@ -506,10 +513,6 @@ def get_to_this_person_access(request, person_id):
         return JsonResponse({'access_list': access_data})
     except CustomUser.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
-
-from django.http import JsonResponse
-from rest_framework.decorators import api_view
-from .models import CustomUser, CommunicationAccess
 
 
 
